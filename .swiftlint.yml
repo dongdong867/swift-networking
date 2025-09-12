@@ -1,7 +1,8 @@
 reporter: "xcode"
 
 included:
-  - OpenNCCUApp
+  - Sources
+  - Tests
 
 excluded:
   - Resource
