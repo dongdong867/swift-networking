@@ -1,10 +1,6 @@
 ## Description
 <!--
 Please include a summary of the changes and the motivation. Describe what problem this PR solves and any design decisions you made.
-
-- What: A one-line summary of the change.
-- Why: Why this change is needed.
-- Impact: Which areas of the codebase are affected.
 -->
 
 ---
