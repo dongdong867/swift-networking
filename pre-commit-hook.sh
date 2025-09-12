@@ -59,10 +59,15 @@ formatted=0
 if command -v swift-format >/dev/null 2>&1; then
   echo "Formatting staged files with swift-format..."
   for f in "${swift_files[@]}"; do
-    if swift-format format --in-place "$f"; then
-      formatted=1
+    swift-format format --in-place "$f"
+    exit_code=$?
+    if [ "$exit_code" -eq 0 ]; then
+      : # No changes made
+    elif [ "$exit_code" -eq 1 ]; then
+      formatted=1 # Changes were made
     else
-      echo "swift-format failed on $f"; exit 1
+      echo "swift-format failed on $f with exit code $exit_code"
+      exit 1
     fi
   done
 elif command -v swiftformat >/dev/null 2>&1; then
