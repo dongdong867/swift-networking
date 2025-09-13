@@ -103,9 +103,6 @@ opt_in_rules:
 
 # Rules setting
 
-convenience_type:
-  severity: error
-
 empty_count:
   severity: warning
 
