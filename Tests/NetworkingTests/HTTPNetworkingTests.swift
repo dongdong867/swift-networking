@@ -64,13 +64,12 @@ struct HTTPNetworkingTests {
         @Test("Response processing chain should work correctly")
         func completeResponseProcessingChain() throws {
             let testData = try JSONEncoder().encode(user)
-            let httpResponse = #require(
-                HTTPURLResponse(
-                    url: URL(string: baseURL + path)!,
-                    statusCode: 200,
-                    httpVersion: "HTTP/1.1",
-                    headerFields: ["Content-Type": "application/json"]
-                ))
+            let httpResponse = HTTPURLResponse(
+                url: URL(string: baseURL + path)!,
+                statusCode: 200,
+                httpVersion: "HTTP/1.1",
+                headerFields: ["Content-Type": "application/json"]
+            )!
 
             let user = try HTTPResponse(data: testData, httpResponse: httpResponse)
                 .validate(statusCodes: 200...299)
