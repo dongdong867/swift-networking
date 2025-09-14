@@ -161,7 +161,7 @@ struct HTTPResponseTests {
     /// Test if custom decoder is used correctly when provided
     ///
     /// **Acceptance Criteria:** \
-    /// Given a HTTP response tiwh snake_case JSON \
+    /// Given a HTTP response with snake_case JSON \
     /// And a custom decoder with convertFromSnakeCase strategy \
     /// When decoding the response with custom decoder \
     /// Then the custom decoder should be used for decoding
