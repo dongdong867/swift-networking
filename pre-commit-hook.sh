@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # Pre-commit hook: fix, lint & format only staged Swift files, then re-add them to the index.
-# - Uses `swiftlint --fix` for auto-fixes, then `swiftlint` for linting (per-file if available)  
+# - Uses `swiftlint --fix` for auto-fixes, then `swiftlint` for linting (per-file if available)
 # - Uses `swift-format` (if available) or `swiftformat` as a fallback for formatting
 
 # Collect staged files (Added / Copied / Modified)
