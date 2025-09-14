@@ -2,8 +2,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Pre-commit hook: lint & format only staged Swift files, then re-add them to the index.
-# - Uses `swiftlint` for linting (per-file if available)
+# Pre-commit hook: fix, lint & format only staged Swift files, then re-add them to the index.
+# - Uses `swiftlint --fix` for auto-fixes, then `swiftlint` for linting (per-file if available)
 # - Uses `swift-format` (if available) or `swiftformat` as a fallback for formatting
 
 # Collect staged files (Added / Copied / Modified)
@@ -31,13 +31,50 @@ if [ ${#swift_files[@]} -eq 0 ]; then
   exit 0
 fi
 
-# Lint staged files with swiftlint if available. Use per-file lint to reduce runtime.
+# Auto-fix staged files with swiftlint if available
+fixed=0
 if command -v swiftlint >/dev/null 2>&1; then
-  echo "Running swiftlint on staged Swift files..."
+  echo "Running swiftlint --fix on staged Swift files..."
+  
+  for f in "${swift_files[@]}"; do
+    if [ ! -f "$f" ]; then
+      echo "⚠️  File not found: $f (skipping)"
+      continue
+    fi
+    
+    # Store file modification time before fix
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      before_mtime=$(stat -f "%m" "$f" 2>/dev/null || echo "0")
+    else
+      before_mtime=$(stat -c "%Y" "$f" 2>/dev/null || echo "0")
+    fi
+    
+    # Run swiftlint --fix
+    if swiftlint --fix "$f" >/dev/null 2>&1; then
+      # Check if file was modified
+      if [[ "$OSTYPE" == "darwin"* ]]; then
+        after_mtime=$(stat -f "%m" "$f" 2>/dev/null || echo "0")
+      else
+        after_mtime=$(stat -c "%Y" "$f" 2>/dev/null || echo "0")
+      fi
+      
+      if [ "$before_mtime" != "$after_mtime" ]; then
+        fixed=1
+      fi
+    fi
+  done
+  
+  # If any files were fixed, re-add them so the commit contains fixed code
+  if [ "$fixed" -ne 0 ]; then
+    echo "Re-adding auto-fixed files to the index..."
+    git add -- "${swift_files[@]}"
+  fi
+  
+  # Lint staged files with swiftlint. Use per-file lint to reduce runtime.
+  echo "Running swiftlint lint on staged Swift files..."
   lint_failed=0
   for f in "${swift_files[@]}"; do
     # Run swiftlint on the specific file and capture its output so errors are printed to the console.
-    # Use --path to lint just the file and capture both stdout and stderr.
     if output="$(swiftlint lint "$f" 2>&1)"; then
       : # ok
     else
@@ -47,11 +84,11 @@ if command -v swiftlint >/dev/null 2>&1; then
     fi
   done
   if [ "$lint_failed" -ne 0 ]; then
-    echo "swiftlint reported issues. Fix them or stage changes before committing."
+    echo "swiftlint reported issues that cannot be auto-fixed. Fix them manually before committing."
     exit 1
   fi
 else
-  echo "swiftlint not found; skipping linting."
+  echo "swiftlint not found; skipping auto-fix and linting."
 fi
 
 # Format staged files with available formatter
