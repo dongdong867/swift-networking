@@ -15,11 +15,12 @@ final class HTTPRequest {
     internal var queryParameters: [String: String] = [:]
     internal var body: Data?
     internal var timeoutInterval: TimeInterval = 30.0
+    internal var validStatusCodes: ClosedRange<Int> = 200...299
 
     // Retry configuration
-    internal var retryCount: Int = 1
+    internal var retryCount: Int = 0
     internal var retryDelay: TimeInterval = 1
-    internal var shouldRetryBlock: ((Error, Int) -> Bool)? = nil
+    internal var shouldRetryBlock: ((Error, Int) -> Bool)?
 
     init(url: URL, method: HTTPMethod) {
         self.url = url
@@ -106,6 +107,28 @@ extension HTTPRequest {
     }
 }
 
+// MARK: - Status Code Validation Configuration
+extension HTTPRequest {
+    /// Configure which HTTP status codes should be considered successful
+    ///
+    /// - Parameter statusCodes: Range of acceptable status codes
+    /// - Returns: Self for method chaining
+    @discardableResult
+    func acceptStatusCodes(_ statusCodes: ClosedRange<Int>) -> HTTPRequest {
+        self.validStatusCodes = statusCodes
+        return self
+    }
+
+    /// Disable automatic status code validation (errors only thrown on manual .validate())
+    ///
+    /// - Returns: Self for method chaining
+    @discardableResult
+    func skipStatusValidation() -> HTTPRequest {
+        self.validStatusCodes = 0...999  // Accept all status codes
+        return self
+    }
+}
+
 // MARK: - Timeout & Retry
 extension HTTPRequest {
     /// Set the request timeout interval.
@@ -155,6 +178,8 @@ extension HTTPRequest {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         let httpResponse = try validateHTTPResponse(response)
+        try validateHTTPStatusCode(httpResponse)
+
         return (data, httpResponse)
     }
 
@@ -164,6 +189,15 @@ extension HTTPRequest {
         else { throw NetworkingError.invalidResponse }
 
         return httpResponse
+    }
+
+    /// Validates HTTP status codes against configured acceptable range
+    private func validateHTTPStatusCode(_ httpResponse: HTTPURLResponse) throws {
+        let statusCode = httpResponse.statusCode
+
+        guard validStatusCodes.contains(statusCode) else {
+            throw NetworkingError.statusCode(statusCode)
+        }
     }
 }
 
@@ -223,12 +257,16 @@ extension HTTPRequest {
         operation: () async throws -> T
     ) async throws -> T {
         var lastError: Error?
-        for attempt in 0...retryCount {
+        let maxAttempts = retryCount + 1
+        for attempt in 0..<maxAttempts {
             do { return try await operation() }
             catch {
                 lastError = error
+
                 let shouldContinue = try await handleRetryLogic(error: error, attempt: attempt)
-                if !shouldContinue { throw error }
+                guard shouldContinue else { throw error }
+
+                try await Task.sleep(nanoseconds: UInt64(retryDelay * 1_000_000_000))
             }
         }
 
@@ -238,13 +276,12 @@ extension HTTPRequest {
     }
 
     /// Handles retry decision and delay
-    private func handleRetryLogic(error: Error, attempt: Int) async throws -> Bool {
+    private func handleRetryLogic(error: Error, attempt: Int) throws -> Bool {
         guard
             attempt < retryCount,
             shouldRetryBlock?(error, attempt) ?? defaultShouldRetry(error: error)
         else { return false }
 
-        if retryDelay > 0 { try await Task.sleep(nanoseconds: UInt64(retryDelay * 1_000_000_000)) }
         return true
     }
 
@@ -253,7 +290,7 @@ extension HTTPRequest {
     /// Retries when the error represents a server-side failure (HTTP 5xx) or
     /// transient networking problems such as timeouts or connection loss.
     /// Does not retry for client-side errors (HTTP 4xx).
-    private func defaultShouldRetry(error: Error) -> Bool {
+    internal func defaultShouldRetry(error: Error) -> Bool {
         if case NetworkingError.statusCode(let code) = error {
             return code >= 500
         }
