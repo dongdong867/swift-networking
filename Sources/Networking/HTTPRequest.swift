@@ -263,7 +263,7 @@ extension HTTPRequest {
             catch {
                 lastError = error
 
-                let shouldContinue = try await handleRetryLogic(error: error, attempt: attempt)
+                let shouldContinue = try handleRetryLogic(error: error, attempt: attempt)
                 guard shouldContinue else { throw error }
 
                 try await Task.sleep(nanoseconds: UInt64(retryDelay * 1_000_000_000))
