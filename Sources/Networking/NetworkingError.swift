@@ -8,7 +8,9 @@
 
 import Foundation
 
-enum NetworkingError: Error, Equatable {
+/// Errors produced by the networking layer.
+/// Marked `public` so callers outside the module can inspect and react to errors.
+public enum NetworkingError: Error, Equatable {
     case invalidURL
     case noData
     case invalidResponse
