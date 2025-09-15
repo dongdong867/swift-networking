@@ -13,9 +13,12 @@ import Testing
 
 @Suite("HTTPClient Factory")
 struct HTTPClientTests {
-    let validBaseURL = "https://api.example.com"
-    let invalidBaseURL = "ht tp://invalid url with spaces"
-    let path = "/users"
+    enum Mock {
+        static let validBaseURL = "https://api.example.com"
+        static let invalidBaseURL = "ht tp://invalid url with spaces"
+        static let path = "/users"
+        static let expectedURL = URL(string: validBaseURL + path)
+    }
 
     // MARK: - GET Method Tests
 
@@ -25,12 +28,17 @@ struct HTTPClientTests {
     /// Given a valid endpoint with base URL and path \
     /// When creating a GET request \
     /// Then the request should be created with correct URL and method
-    @Test("Valid endpoint should create request correctly")
-    func createRequestWithValidEndpoint() throws {
-        let request = try HTTPClient.get(.init(baseURL: validBaseURL, path: path))
+    @Test(
+        "Valid endpoint should create request correctly",
+        arguments: [
+            HTTPNetworkEndpoint(baseURL: Mock.validBaseURL, path: Mock.path),
+            HTTPNetworkEndpoint(string: Mock.validBaseURL + Mock.path),
+        ])
+    func createRequestWithValidEndpoint(endpoint: HTTPNetworkEndpoint) throws {
+        let request = try HTTPClient.get(endpoint)
 
         #expect(request.method == .GET)
-        #expect(request.url == URL(string: validBaseURL + path))
+        #expect(request.url == Mock.expectedURL)
     }
 
     /// Test if invalid endpoint throws NetworkingError correctly
@@ -42,7 +50,7 @@ struct HTTPClientTests {
     @Test("Invalid endpoint should throw NetworkingError correctly")
     func createRequestWithInvalidEndpoint() {
         #expect(throws: NetworkingError.invalidURL) {
-            try HTTPClient.get(.init(baseURL: invalidBaseURL, path: path))
+            try HTTPClient.get(.init(baseURL: Mock.invalidBaseURL, path: Mock.path))
         }
     }
 
@@ -56,10 +64,10 @@ struct HTTPClientTests {
     /// Then the request should be created with correct URL and PUT method
     @Test("Valid endpoint should create PUT request correctly")
     func createPUTRequestWithValidEndpoint() throws {
-        let request = try HTTPClient.put(.init(baseURL: validBaseURL, path: path))
+        let request = try HTTPClient.put(.init(baseURL: Mock.validBaseURL, path: Mock.path))
 
         #expect(request.method == .PUT)
-        #expect(request.url == URL(string: validBaseURL + path))
+        #expect(request.url == Mock.expectedURL)
     }
 
     /// Test if invalid endpoint throws NetworkingError for PUT request
@@ -71,7 +79,7 @@ struct HTTPClientTests {
     @Test("Invalid endpoint should throw NetworkingError for PUT request")
     func createPUTRequestWithInvalidEndpoint() {
         #expect(throws: NetworkingError.invalidURL) {
-            try HTTPClient.put(.init(baseURL: invalidBaseURL, path: path))
+            try HTTPClient.put(.init(baseURL: Mock.invalidBaseURL, path: Mock.path))
         }
     }
 
@@ -85,10 +93,10 @@ struct HTTPClientTests {
     /// Then the request should be created with correct URL and DELETE method
     @Test("Valid endpoint should create DELETE request correctly")
     func createDELETERequestWithValidEndpoint() throws {
-        let request = try HTTPClient.delete(.init(baseURL: validBaseURL, path: path))
+        let request = try HTTPClient.delete(.init(baseURL: Mock.validBaseURL, path: Mock.path))
 
         #expect(request.method == .DELETE)
-        #expect(request.url == URL(string: validBaseURL + path))
+        #expect(request.url == URL(string: Mock.validBaseURL + Mock.path))
     }
 
     /// Test if invalid endpoint throws NetworkingError for DELETE request
@@ -100,7 +108,7 @@ struct HTTPClientTests {
     @Test("Invalid endpoint should throw NetworkingError for DELETE request")
     func createDELETERequestWithInvalidEndpoint() {
         #expect(throws: NetworkingError.invalidURL) {
-            try HTTPClient.delete(.init(baseURL: invalidBaseURL, path: path))
+            try HTTPClient.delete(.init(baseURL: Mock.invalidBaseURL, path: Mock.path))
         }
     }
 
@@ -114,10 +122,10 @@ struct HTTPClientTests {
     /// Then the request should be created with correct URL and PATCH method
     @Test("Valid endpoint should create PATCH request correctly")
     func createPATCHRequestWithValidEndpoint() throws {
-        let request = try HTTPClient.patch(.init(baseURL: validBaseURL, path: path))
+        let request = try HTTPClient.patch(.init(baseURL: Mock.validBaseURL, path: Mock.path))
 
         #expect(request.method == .PATCH)
-        #expect(request.url == URL(string: validBaseURL + path))
+        #expect(request.url == Mock.expectedURL)
     }
 
     /// Test if invalid endpoint throws NetworkingError for PATCH request
@@ -129,7 +137,7 @@ struct HTTPClientTests {
     @Test("Invalid endpoint should throw NetworkingError for PATCH request")
     func createPATCHRequestWithInvalidEndpoint() {
         #expect(throws: NetworkingError.invalidURL) {
-            try HTTPClient.patch(.init(baseURL: invalidBaseURL, path: path))
+            try HTTPClient.patch(.init(baseURL: Mock.invalidBaseURL, path: Mock.path))
         }
     }
 }
