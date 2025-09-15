@@ -8,10 +8,19 @@
 
 import Foundation
 
-enum HTTPMethod: String {
+/// Represents the HTTP methods supported by the networking layer.
+///
+/// Marked `public` so callers outside the module can construct requests
+/// and reference HTTP methods when needed.
+public enum HTTPMethod: String {
+    /// HTTP GET
     case GET = "GET"
+    /// HTTP POST
     case POST = "POST"
+    /// HTTP PUT
     case PUT = "PUT"
+    /// HTTP DELETE
     case DELETE = "DELETE"
+    /// HTTP PATCH
     case PATCH = "PATCH"
 }
