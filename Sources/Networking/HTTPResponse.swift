@@ -45,7 +45,9 @@ extension HTTPResponse {
     /// - Returns: The same `HTTPResponse` instance to allow method chaining.
     /// - Throws: Any error thrown by the provided `validator` closure.
     @discardableResult
-    public func validate(_ validator: (HTTPResponse) throws -> Void) throws -> HTTPResponse {
+    public func validate(
+        _ validator: @Sendable (HTTPResponse) throws -> Void
+    ) throws -> HTTPResponse {
         try validator(self)
         return self
     }

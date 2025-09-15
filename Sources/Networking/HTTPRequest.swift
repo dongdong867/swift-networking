@@ -163,12 +163,14 @@ extension HTTPRequest {
         return self
     }
 
-    /// Disable automatic status code validation (errors only thrown on manual .validate())
+    /// Disable automatic status code validation 
+    ///
+    /// - Information: You can still manually setup validation logic in `HTTPResponse.validate(statusCodes:)`
     ///
     /// - Returns: Self for method chaining
     @discardableResult
     public func skipStatusValidation() -> HTTPRequest {
-        self.validStatusCodes = 0...999  // Accept all status codes
+        self.validStatusCodes = 100...599  // Accept all standard HTTP status codes
         return self
     }
 }
@@ -181,7 +183,7 @@ extension HTTPRequest {
     /// - Returns: Self for method chaining.
     @discardableResult
     public func timeout(_ interval: TimeInterval) -> HTTPRequest {
-        self.timeoutInterval = interval
+        self.timeoutInterval = max(0, interval)
         return self
     }
 
@@ -209,7 +211,7 @@ extension HTTPRequest {
 extension HTTPRequest {
     /// Executes the request with retry logic and returns HTTPResponse for chaining
     ///
-    /// - Returns: An `HTTPResponse` object for method chaning.
+    /// - Returns: An `HTTPResponse` object for method chaining.
     /// - Throws: Networking errors or URLSession errors encountered during the request.
     /// Note: `HTTPResponse` is expected to be public in the module so callers can use the
     /// returned value for validation and decoding.
@@ -230,7 +232,7 @@ extension HTTPRequest {
     }
 
     /// Validates the URLResponse is an HTTPURLResponse
-    private func validateHTTPResponse(_ response: URLResponse) throws -> HTTPURLResponse {
+    internal func validateHTTPResponse(_ response: URLResponse) throws -> HTTPURLResponse {
         guard let httpResponse = response as? HTTPURLResponse
         else { throw NetworkingError.invalidResponse }
 
@@ -238,7 +240,7 @@ extension HTTPRequest {
     }
 
     /// Validates HTTP status codes against configured acceptable range
-    private func validateHTTPStatusCode(_ httpResponse: HTTPURLResponse) throws {
+    internal func validateHTTPStatusCode(_ httpResponse: HTTPURLResponse) throws {
         let statusCode = httpResponse.statusCode
 
         guard validStatusCodes.contains(statusCode) else {
@@ -250,14 +252,14 @@ extension HTTPRequest {
 // MARK: - URLRequest Building
 extension HTTPRequest {
     /// Build and configure a `URLRequest` from the stored values.
-    fileprivate func buildURLRequest() throws -> URLRequest {
+    internal func buildURLRequest() throws -> URLRequest {
         let urlComponents = try createURLComponents()
         let url = try buildURL(from: urlComponents)
         return configureURLRequest(with: url)
     }
 
     /// Create `URLComponents` from the base URL and query parameters.
-    fileprivate func createURLComponents() throws -> URLComponents {
+    internal func createURLComponents() throws -> URLComponents {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         else {
             throw NetworkingError.invalidURL
@@ -273,7 +275,7 @@ extension HTTPRequest {
     }
 
     /// Finalize `URL` from `URLComponents`.
-    fileprivate func buildURL(from components: URLComponents) throws -> URL {
+    internal func buildURL(from components: URLComponents) throws -> URL {
         guard let url = components.url
         else {
             throw NetworkingError.invalidURL
@@ -282,7 +284,7 @@ extension HTTPRequest {
     }
 
     /// Configure a `URLRequest` with method, headers, timeout, and body.
-    fileprivate func configureURLRequest(with url: URL) -> URLRequest {
+    internal func configureURLRequest(with url: URL) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.timeoutInterval = timeoutInterval
@@ -299,7 +301,7 @@ extension HTTPRequest {
 // MARK: - Retry Handling
 extension HTTPRequest {
     /// Execute an operation with the configured retry strategy.
-    fileprivate func executeWithRetry<T>(
+    internal func executeWithRetry<T>(
         operation: () async throws -> T
     ) async throws -> T {
         var lastError: Error?
@@ -312,7 +314,7 @@ extension HTTPRequest {
                 let shouldContinue = try handleRetryLogic(error: error, attempt: attempt)
                 guard shouldContinue else { throw error }
 
-                try await Task.sleep(nanoseconds: UInt64(retryDelay * 1_000_000_000))
+                try await Task.sleep(for: .seconds(retryDelay))
             }
         }
 
@@ -322,7 +324,7 @@ extension HTTPRequest {
     }
 
     /// Handles retry decision and delay
-    fileprivate func handleRetryLogic(error: Error, attempt: Int) throws -> Bool {
+    internal func handleRetryLogic(error: Error, attempt: Int) throws -> Bool {
         guard
             attempt < retryCount,
             shouldRetryBlock?(error, attempt) ?? defaultShouldRetry(error: error)
@@ -347,7 +349,7 @@ extension HTTPRequest {
         else { return false }
 
         switch urlError.code {
-        case .timedOut, .networkConnectionLost:
+        case .timedOut, .networkConnectionLost, .cannotConnectToHost, .dnsLookupFailed:
             return true
         default:
             return false

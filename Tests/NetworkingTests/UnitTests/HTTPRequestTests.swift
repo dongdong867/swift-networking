@@ -282,11 +282,11 @@ struct HTTPRequestRetryTests {
     /// Then the custom condition should take precedence over default logic
     @Test("Custom retry condition should override default logic")
     func customRetryConditionOverridesDefault() {
-        var conditionCallCount = 0
+        let counter = Counter()
 
         let request = HTTPRequest(url: .dummyURL, method: .GET)
             .retry(3, delay: 0) { _, _ in
-                conditionCallCount += 1
+                counter.increment()
                 // Force return false for testing
                 return false
             }
@@ -296,7 +296,7 @@ struct HTTPRequestRetryTests {
             request.shouldRetryBlock?(serverError, 0)
             ?? request.defaultShouldRetry(error: serverError)
 
-        #expect(conditionCallCount == 1)
+        #expect(counter.value == 1)
         #expect(shouldRetry == false)
     }
 
@@ -352,18 +352,20 @@ struct RealworldRetryTests {
         arguments: zip([URL.serverErrorURL, .clientErrorURL], [2, 0]))
     func retryHandlerShouldBehaveAsExpected(url: URL, expectedRetryCount: Int) async throws {
         let request = HTTPRequest(url: url, method: .GET)
-        var counter = 0
+        let counter = Counter()
 
         await #expect(throws: NetworkingError.self) {
             try await request.retry(2, delay: 0.2) { error, _ in
-                let shouldRetry = request.defaultShouldRetry(error: error)
-                if shouldRetry { counter += 1 }
+                let shouldRetry = HTTPRequest(url: url, method: .GET)
+                    .defaultShouldRetry(error: error)
+
+                if shouldRetry { counter.increment() }
                 return shouldRetry
             }
             .send()
         }
 
-        #expect(counter == expectedRetryCount)
+        #expect(counter.value == expectedRetryCount)
     }
 
     /// Test if skipping status validation allows error status codes

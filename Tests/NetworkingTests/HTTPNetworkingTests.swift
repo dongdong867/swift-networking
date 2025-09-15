@@ -78,11 +78,11 @@ struct HTTPNetworkingTests {
         /// Then the retry function should be properly stored and accessible
         @Test("Retry function should work correctly in request chain")
         func retryFunctionInRequestChain() throws {
-            var shouldRetryCallCount = 0
+            let counter = Counter()
             let error = NetworkingError.statusCode(500)
             let request = try HTTPClient.get(Mock.endpoint)
                 .retry(3, delay: 0.5) { _, attempt in
-                    shouldRetryCallCount += 1
+                    counter.increment()
                     return attempt < 2
                 }
 
@@ -91,7 +91,7 @@ struct HTTPNetworkingTests {
             #expect(request.shouldRetryBlock != nil)
             #expect(request.shouldRetryBlock?(error, 0) == true)
             #expect(request.shouldRetryBlock?(error, 2) == false)
-            #expect(shouldRetryCallCount == 2)
+            #expect(counter.value == 2)
         }
 
         /// Test if response processing chain works correctly

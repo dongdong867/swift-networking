@@ -17,7 +17,14 @@ struct HTTPClientTests {
         static let validBaseURL = "https://api.example.com"
         static let invalidBaseURL = "ht tp://invalid url with spaces"
         static let path = "/users"
-        static let expectedURL = URL(string: validBaseURL + path)!
+        static var expectedURL: URL {
+            guard let base = URL(string: validBaseURL) else {
+                preconditionFailure("Invalid test base URL")
+            }
+
+            let cleanedPath = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            return base.appendingPathComponent(cleanedPath)
+        }
     }
 
     // MARK: - GET Method Tests
@@ -29,9 +36,8 @@ struct HTTPClientTests {
     /// When creating a GET request \
     /// Then the request should be created with correct URL and method
     @Test(
-        "Valid endpoint should create request correctly",
-        arguments: [Mock.validBaseURL], [Mock.path]
-    )
+        "Valid endpoint (baseURL+path) should create request correctly",
+        arguments: [(Mock.validBaseURL, Mock.path)])
     func createRequestWithValidEndpoint(baseURLString: String, path: String) throws {
         let endpoint = try HTTPNetworkEndpoint(baseURLString: baseURLString, path: path)
         let request = try HTTPClient.get(endpoint)
@@ -47,7 +53,7 @@ struct HTTPClientTests {
     /// When creating a GET request \
     /// Then the request should be created with correct URL and method
     @Test(
-        "Valid endpoint should create request correctly",
+        "Valid endpoint (urlString) should create request correctly",
         arguments: [Mock.validBaseURL + Mock.path]
     )
     func createRequestWithValidEndpoint(urlString: String) throws {
