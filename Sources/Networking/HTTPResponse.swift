@@ -9,11 +9,16 @@
 import Foundation
 
 /// Represents an HTTP response that supports fluent validation and decoding
-struct HTTPResponse {
-    let data: Data
-    let httpResponse: HTTPURLResponse
+public struct HTTPResponse: Sendable {
+    public let data: Data
+    public let httpResponse: HTTPURLResponse
 
-    init(data: Data, httpResponse: HTTPURLResponse) {
+    /// Initialize an `HTTPResponse` from raw `Data` and an `HTTPURLResponse`.
+    ///
+    /// - Parameters:
+    ///   - data: Raw response data.
+    ///   - httpResponse: The HTTPURLResponse object.
+    public init(data: Data, httpResponse: HTTPURLResponse) {
         self.data = data
         self.httpResponse = httpResponse
     }
@@ -27,7 +32,7 @@ extension HTTPResponse {
     /// - Returns: The same `HTTPResponse` instance to allow method chaining.
     /// - Throws: `NetworkingError.statusCode` if the response status code is outside the allowed range.
     @discardableResult
-    func validate(statusCodes: ClosedRange<Int> = 200...299) throws -> HTTPResponse {
+    public func validate(statusCodes: ClosedRange<Int> = 200...299) throws -> HTTPResponse {
         guard statusCodes ~= httpResponse.statusCode else {
             throw NetworkingError.statusCode(httpResponse.statusCode)
         }
@@ -40,7 +45,7 @@ extension HTTPResponse {
     /// - Returns: The same `HTTPResponse` instance to allow method chaining.
     /// - Throws: Any error thrown by the provided `validator` closure.
     @discardableResult
-    func validate(_ validator: (HTTPResponse) throws -> Void) throws -> HTTPResponse {
+    public func validate(_ validator: (HTTPResponse) throws -> Void) throws -> HTTPResponse {
         try validator(self)
         return self
     }
@@ -52,15 +57,18 @@ extension HTTPResponse {
     ///   - decoder: The `JSONDecoder` to use (defaults to a new `JSONDecoder()`).
     /// - Returns: An instance of the decoded type.
     /// - Throws: `NetworkingError.decodingError` when decoding fails.
-    func decode<T: Decodable>(
+    public func decode<T: Decodable>(
         into type: T.Type,
         using decoder: JSONDecoder = JSONDecoder()
     ) throws -> T {
         do {
             return try decoder.decode(type, from: data)
         }
-        catch let decodingError {
-            print("Decoding failed: \(decodingError)")
+        catch {
+            // Preserve a simple error surface for consumers; log the underlying error for diagnostics.
+            #if DEBUG
+            print("HTTPResponse.decode failed: \(error)")
+            #endif
             throw NetworkingError.decodingError
         }
     }
@@ -68,7 +76,7 @@ extension HTTPResponse {
     /// The raw response data as received from the network.
     ///
     /// Use this when you need the unprocessed bytes instead of a decoded model.
-    var rawData: Data {
+    public var rawData: Data {
         data
     }
 }
