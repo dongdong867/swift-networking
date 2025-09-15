@@ -61,7 +61,7 @@ struct NewUser: Encodable {
 
 let newUser = NewUser(name: "John Doe", email: "john.doe@example.com")
 let apiToken = "your-secret-api-token"
-let endpoint= HTTPNetworkEndpoint(baseURL: "https://api.example.com", path: "/users")
+let endpoint = HTTPNetworkEndpoint(baseURL: "https://api.example.com", path: "/users")
 
 let response = try await HTTPClient.post(endpoint)
     .bearer(token: apiToken) // Set bearer token
@@ -75,7 +75,7 @@ Configure a request to automatically retry on failure. You can specify the numbe
 the delay, and the conditions under which a retry should occur.
 
 ```swift
-let endpoint= HTTPNetworkEndpoint(baseURL: "https://api.example.com", path: "/users")
+let endpoint = HTTPNetworkEndpoint(baseURL: "https://api.example.com", path: "/users")
 let response = try await HTTPClient.get(endpoint)
     // Retry 3 times with a 2-second delay between attempts
     .retry(3, delay: 2.0) { error, attempt in
@@ -116,4 +116,5 @@ Contributions are welcome! Please feel free to submit a pull request.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License, Version 2.0.
+See the [LICENSE](LICENSE) file for details.
