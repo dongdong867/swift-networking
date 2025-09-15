@@ -49,6 +49,60 @@ struct HTTPRequestBuilderTests {
         #expect(request.headers == expectedHeaders)
     }
 
+    /// Test if basic authentication header is set correctly
+    ///
+    /// **Acceptance Criteria:** \
+    /// Given an HTTPRequest instance \
+    /// When setting basic credentials \
+    /// Then the `Authorization` header should be set to `Basic <base64>` correctly
+    @Test("Basic auth header should be set correctly")
+    func setBasicAuthorizationHeader() {
+        let username = "user"
+        let password = "pass"
+        let credential = "\(username):\(password)"
+        let encoded = Data(credential.utf8).base64EncodedString()
+        let expectedHeader = ["Authorization": "Basic \(encoded)"]
+
+        let request = HTTPRequest(url: .dummyURL, method: .GET)
+            .basic(username: username, password: password)
+
+        #expect(request.headers == expectedHeader)
+    }
+
+    /// Test if the bearer authentication header is set correctly
+    ///
+    /// **Acceptance Criteria:** \
+    /// Given an HTTPRequest instance \
+    /// When setting a bearer token \
+    /// Then the `Authorization` header should be set to `Bearer <token>` correctly
+    @Test("Bearer auth header should be set correctly")
+    func setBearerAuthorizationHeader() {
+        let token = "mytoken"
+        let expectedHeader = ["Authorization": "Bearer \(token)"]
+
+        let request = HTTPRequest(url: .dummyURL, method: .GET)
+            .bearer(token: token)
+
+        #expect(request.headers == expectedHeader)
+    }
+
+    /// Test if the User-Agent header is set correctly
+    ///
+    /// **Acceptance Criteria:** \
+    /// Given an HTTPRequest instance \
+    /// When setting a User-Agent value \
+    /// Then the `User-Agent` header should be set correctly
+    @Test("User-Agent header should be set correctly")
+    func setUserAgentHeader() {
+        let ua = "MyAgent/1.0"
+        let expectedHeader = ["User-Agent": ua]
+
+        let request = HTTPRequest(url: .dummyURL, method: .GET)
+            .userAgent(ua)
+
+        #expect(request.headers == expectedHeader)
+    }
+
     /// Test if a single query parameter is added correctly
     ///
     /// **Acceptance Criteria:** \
@@ -127,7 +181,7 @@ struct HTTPRequestBuilderTests {
     /// And the data will failed when encoding to JSON \
     /// Then an encoding error should be thrown
     @Test("Encoding error should be thrown for invalid JSON body")
-    func setJSONBodyWithEncodingError() {
+    func setJSONBodyWithInvalidObject() {
         struct InvalidObject: Encodable {
             func encode(to _: Encoder) throws {
                 throw EncodingError.invalidValue(
@@ -145,6 +199,22 @@ struct HTTPRequestBuilderTests {
         #expect(throws: EncodingError.self) {
             try HTTPRequest(url: .dummyURL, method: .POST).jsonBody(invalidObject)
         }
+    }
+
+    /// Test if acceptable status code range is configured correctly
+    ///
+    /// **Acceptance Criteria:** \
+    /// Given an HTTPRequest instance and status code range \
+    /// When setting acceptable status codes \
+    /// Then the status code range should be configured in the request
+    @Test("Acceptable status code range should be configured correctly")
+    func setAcceptableStatusCodes() {
+        let expectedRange = 200...200
+
+        let request = HTTPRequest(url: .dummyURL, method: .GET)
+            .acceptStatusCodes(expectedRange)
+
+        #expect(request.validStatusCodes == expectedRange)
     }
 
     /// Test if timeout interval is configured correctly

@@ -51,6 +51,40 @@ extension HTTPRequest {
         self.headers.merge(headers) { _, new in new }
         return self
     }
+
+    /// Sets HTTP Basic Authentication header using the provided username and password.
+    ///
+    /// - Parameters:
+    ///   - username: The username for basic auth.
+    ///   - password: The password for basic auth.
+    /// - Returns: Self for method chaining.
+    @discardableResult
+    func basic(username: String, password: String) -> HTTPRequest {
+        let base64 = Data("\(username):\(password)".utf8).base64EncodedString()
+        self.headers["Authorization"] = "Basic \(base64)"
+        return self
+    }
+
+    /// Sets HTTP Bearer Authorization header using the provided token.
+    ///
+    /// - Parameter token: The bearer token.
+    /// - Returns: Self for method chaining.
+    @discardableResult
+    func bearer(token: String) -> HTTPRequest {
+        self.headers["Authorization"] = "Bearer \(token)"
+        return self
+    }
+
+    /// Sets the User-Agent header to identify the client.
+    ///
+    /// - Parameter value: The User-Agent string.
+    /// - Returns: Self for method chaining.
+    @discardableResult
+    func userAgent(_ value: String) -> HTTPRequest {
+        guard !value.isEmpty else { return self }
+        self.headers["User-Agent"] = value
+        return self
+    }
 }
 
 // MARK: - Query Parameters
