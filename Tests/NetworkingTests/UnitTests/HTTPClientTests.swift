@@ -22,7 +22,7 @@ struct HTTPClientTests {
 
     // MARK: - GET Method Tests
 
-    /// Test if valid endpoint creates request correctly
+    /// Test if valid endpoint creates request correctly from base URL and path
     ///
     /// **Acceptance Criteria:** \
     /// Given a valid endpoint with base URL and path \
@@ -30,11 +30,28 @@ struct HTTPClientTests {
     /// Then the request should be created with correct URL and method
     @Test(
         "Valid endpoint should create request correctly",
-        arguments: [
-            try! HTTPNetworkEndpoint(baseURLString: Mock.validBaseURL, path: Mock.path),
-            try! HTTPNetworkEndpoint(string: Mock.validBaseURL + Mock.path),
-        ])
-    func createRequestWithValidEndpoint(endpoint: HTTPNetworkEndpoint) throws {
+        arguments: [Mock.validBaseURL], [Mock.path]
+    )
+    func createRequestWithValidEndpoint(baseURLString: String, path: String) throws {
+        let endpoint = try HTTPNetworkEndpoint(baseURLString: baseURLString, path: path)
+        let request = try HTTPClient.get(endpoint)
+
+        #expect(request.method == .GET)
+        #expect(request.url == Mock.expectedURL)
+    }
+
+    /// Test if valid endpoint creates request correctly from url string
+    ///
+    /// **Acceptance Criteria:** \
+    /// Given a valid endpoint with url string \
+    /// When creating a GET request \
+    /// Then the request should be created with correct URL and method
+    @Test(
+        "Valid endpoint should create request correctly",
+        arguments: [Mock.validBaseURL + Mock.path]
+    )
+    func createRequestWithValidEndpoint(urlString: String) throws {
+        let endpoint = try HTTPNetworkEndpoint(string: urlString)
         let request = try HTTPClient.get(endpoint)
 
         #expect(request.method == .GET)
