@@ -61,7 +61,7 @@ struct NewUser: Encodable {
 
 let newUser = NewUser(name: "John Doe", email: "john.doe@example.com")
 let apiToken = "your-secret-api-token"
-let endpoint = HTTPNetworkEndpoint(string: "https://api.example.com/users/1")
+let endpoint = HTTPNetworkEndpoint(string: "https://api.example.com/users")
 
 let response = try await HTTPClient.post(endpoint)
     .bearer(token: apiToken) // Set bearer token
