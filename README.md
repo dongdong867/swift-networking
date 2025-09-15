@@ -17,7 +17,7 @@ sending HTTP requests simple and elegant.
 
 You can add SwiftNetworking to your project using Swift Package Manager. In Xcode, go to `File > Add Packages...` and enter the repository URL:
 
-```
+```text
 https://github.com/dongdong867/swift-networking.git
 ```
 
