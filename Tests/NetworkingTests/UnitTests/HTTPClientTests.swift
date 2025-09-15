@@ -96,7 +96,7 @@ struct HTTPClientTests {
         let request = try HTTPClient.delete(.init(baseURL: Mock.validBaseURL, path: Mock.path))
 
         #expect(request.method == .DELETE)
-        #expect(request.url == URL(string: Mock.validBaseURL + Mock.path))
+        #expect(request.url == Mock.expectedURL)
     }
 
     /// Test if invalid endpoint throws NetworkingError for DELETE request
