@@ -163,7 +163,7 @@ extension HTTPRequest {
         return self
     }
 
-    /// Disable automatic status code validation 
+    /// Disable automatic status code validation
     ///
     /// - Information: You can still manually setup validation logic in `HTTPResponse.validate(statusCodes:)`
     ///
