@@ -81,6 +81,7 @@ extension HTTPRequest {
     /// - Returns: Self for method chaining.
     @discardableResult
     func userAgent(_ value: String) -> HTTPRequest {
+        guard !value.isEmpty else { return self }
         self.headers["User-Agent"] = value
         return self
     }
