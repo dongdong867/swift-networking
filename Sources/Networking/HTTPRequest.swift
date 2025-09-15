@@ -60,9 +60,7 @@ extension HTTPRequest {
     /// - Returns: Self for method chaining.
     @discardableResult
     func basic(username: String, password: String) -> HTTPRequest {
-        let credential = "\(username):\(password)"
-        guard let data = credential.data(using: .utf8) else { return self }
-        let base64 = data.base64EncodedString()
+        let base64 = Data("\(username):\(password)".utf8).base64EncodedString()
         self.headers["Authorization"] = "Basic \(base64)"
         return self
     }
