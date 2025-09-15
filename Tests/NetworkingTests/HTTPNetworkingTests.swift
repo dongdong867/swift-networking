@@ -18,8 +18,9 @@ struct HTTPNetworkingTests {
         enum Mock {
             static let url = URL(string: "https://api.example.com/users")!
             static let user = MockUser(id: 1, name: "John Doe", email: "john@example.com")
-            static let endpoint = HTTPNetworkEndpoint(
-                baseURL: "https://api.example.com", path: "/users")
+            static let endpoint = try! HTTPNetworkEndpoint(
+                baseURLString: "https://api.example.com/",
+                path: "users")
             static let userData = try! JSONEncoder().encode(user)
             static let clientErrorResponse = HTTPURLResponse(
                 url: url,

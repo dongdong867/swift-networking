@@ -17,7 +17,7 @@ struct HTTPClientTests {
         static let validBaseURL = "https://api.example.com"
         static let invalidBaseURL = "ht tp://invalid url with spaces"
         static let path = "/users"
-        static let expectedURL = URL(string: validBaseURL + path)
+        static let expectedURL = URL(string: validBaseURL + path)!
     }
 
     // MARK: - GET Method Tests
@@ -31,8 +31,8 @@ struct HTTPClientTests {
     @Test(
         "Valid endpoint should create request correctly",
         arguments: [
-            HTTPNetworkEndpoint(baseURL: Mock.validBaseURL, path: Mock.path),
-            HTTPNetworkEndpoint(string: Mock.validBaseURL + Mock.path),
+            try! HTTPNetworkEndpoint(baseURLString: Mock.validBaseURL, path: Mock.path),
+            try! HTTPNetworkEndpoint(string: Mock.validBaseURL + Mock.path),
         ])
     func createRequestWithValidEndpoint(endpoint: HTTPNetworkEndpoint) throws {
         let request = try HTTPClient.get(endpoint)
@@ -50,7 +50,7 @@ struct HTTPClientTests {
     @Test("Invalid endpoint should throw NetworkingError correctly")
     func createRequestWithInvalidEndpoint() {
         #expect(throws: NetworkingError.invalidURL) {
-            try HTTPClient.get(.init(baseURL: Mock.invalidBaseURL, path: Mock.path))
+            try HTTPClient.get(.init(baseURLString: Mock.invalidBaseURL, path: Mock.path))
         }
     }
 
@@ -64,7 +64,7 @@ struct HTTPClientTests {
     /// Then the request should be created with correct URL and PUT method
     @Test("Valid endpoint should create PUT request correctly")
     func createPUTRequestWithValidEndpoint() throws {
-        let request = try HTTPClient.put(.init(baseURL: Mock.validBaseURL, path: Mock.path))
+        let request = try HTTPClient.put(.init(baseURLString: Mock.validBaseURL, path: Mock.path))
 
         #expect(request.method == .PUT)
         #expect(request.url == Mock.expectedURL)
@@ -79,7 +79,7 @@ struct HTTPClientTests {
     @Test("Invalid endpoint should throw NetworkingError for PUT request")
     func createPUTRequestWithInvalidEndpoint() {
         #expect(throws: NetworkingError.invalidURL) {
-            try HTTPClient.put(.init(baseURL: Mock.invalidBaseURL, path: Mock.path))
+            try HTTPClient.put(.init(baseURLString: Mock.invalidBaseURL, path: Mock.path))
         }
     }
 
@@ -93,7 +93,8 @@ struct HTTPClientTests {
     /// Then the request should be created with correct URL and DELETE method
     @Test("Valid endpoint should create DELETE request correctly")
     func createDELETERequestWithValidEndpoint() throws {
-        let request = try HTTPClient.delete(.init(baseURL: Mock.validBaseURL, path: Mock.path))
+        let request = try HTTPClient.delete(
+            .init(baseURLString: Mock.validBaseURL, path: Mock.path))
 
         #expect(request.method == .DELETE)
         #expect(request.url == Mock.expectedURL)
@@ -108,7 +109,7 @@ struct HTTPClientTests {
     @Test("Invalid endpoint should throw NetworkingError for DELETE request")
     func createDELETERequestWithInvalidEndpoint() {
         #expect(throws: NetworkingError.invalidURL) {
-            try HTTPClient.delete(.init(baseURL: Mock.invalidBaseURL, path: Mock.path))
+            try HTTPClient.delete(.init(baseURLString: Mock.invalidBaseURL, path: Mock.path))
         }
     }
 
@@ -122,7 +123,7 @@ struct HTTPClientTests {
     /// Then the request should be created with correct URL and PATCH method
     @Test("Valid endpoint should create PATCH request correctly")
     func createPATCHRequestWithValidEndpoint() throws {
-        let request = try HTTPClient.patch(.init(baseURL: Mock.validBaseURL, path: Mock.path))
+        let request = try HTTPClient.patch(.init(baseURLString: Mock.validBaseURL, path: Mock.path))
 
         #expect(request.method == .PATCH)
         #expect(request.url == Mock.expectedURL)
@@ -137,7 +138,7 @@ struct HTTPClientTests {
     @Test("Invalid endpoint should throw NetworkingError for PATCH request")
     func createPATCHRequestWithInvalidEndpoint() {
         #expect(throws: NetworkingError.invalidURL) {
-            try HTTPClient.patch(.init(baseURL: Mock.invalidBaseURL, path: Mock.path))
+            try HTTPClient.patch(.init(baseURLString: Mock.invalidBaseURL, path: Mock.path))
         }
     }
 }

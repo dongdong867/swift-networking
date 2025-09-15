@@ -9,7 +9,15 @@
 import Foundation
 
 struct HTTPNetworkEndpoint {
-    let urlString: String
+    let url: URL
+
+    /// The complete URL string
+    ///
+    /// - Parameter url: The URL component
+    /// - Returns: The full URL string (e.g., "https://api.example.com/v1/resource")
+    init(url: URL) {
+        self.url = url
+    }
 
     /// Initialize with base URL and path
     ///
@@ -20,15 +28,20 @@ struct HTTPNetworkEndpoint {
     /// - Parameters:
     ///   - baseURL: The base URL string (e.g., "https://api.example.com")
     ///   - path: The endpoint path (e.g., "/v1/resource")
-    init(baseURL: String, path: String) {
-        self.urlString = baseURL + path
+    /// - Throws: `NetworkingError.invalidURL` if the combined URL is not valid
+    init(baseURLString: String, path: String) throws {
+        guard let base = URL(string: baseURLString) else { throw NetworkingError.invalidURL }
+        let cleanedPath = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        self.url = base.appendingPathComponent(cleanedPath)
     }
 
     /// Initialize with a full URL string
     ///
     /// - Parameter string: The complete URL string (e.g., "https://api.example.com/v1/resource")
-    init(string: String) {
-        self.urlString = string
+    /// - Throws: `NetworkingError.invalidURL` if the string is not a valid URL
+    init(string: String) throws {
+        guard let url = URL(string: string) else { throw NetworkingError.invalidURL }
+        self.url = url
     }
 }
 
@@ -58,10 +71,6 @@ enum HTTPClient {
     private static func request(
         method: HTTPMethod, endpoint: HTTPNetworkEndpoint
     ) throws -> HTTPRequest {
-        guard let url = URL(string: endpoint.urlString) else {
-            throw NetworkingError.invalidURL
-        }
-
-        return HTTPRequest(url: url, method: method)
+        HTTPRequest(url: endpoint.url, method: method)
     }
 }
