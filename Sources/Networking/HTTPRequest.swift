@@ -192,7 +192,7 @@ extension HTTPRequest {
     /// - Parameters:
     ///   - count: Number of retry attempts.
     ///   - delay: Delay between retries in seconds.
-    ///   - if: Optional closure that determines whether to retry for a given error/attempt.
+    ///   - condition: Optional closure that determines whether to retry for a given error/attempt.
     /// - Returns: Self for method chaining.
     @discardableResult
     public func retry(
