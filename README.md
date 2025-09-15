@@ -43,7 +43,7 @@ targets: [
 Define your endpoint and then create and send the request. The response can be easily decoded into a `Decodable` model.
 
 ```swift
-let endpoint = HTTPNetworkEndpoint(baseURL: "https://api.example.com", path: "/users/1")
+let endpoint = HTTPNetworkEndpoint(string: "https://api.example.com/users/1")
 let user = try await HTTPClient.get(endpoint)
     .send()
     .decode(into: YOUR_DECODABLE_MODEL.self)
@@ -61,7 +61,7 @@ struct NewUser: Encodable {
 
 let newUser = NewUser(name: "John Doe", email: "john.doe@example.com")
 let apiToken = "your-secret-api-token"
-let endpoint = HTTPNetworkEndpoint(baseURL: "https://api.example.com", path: "/users")
+let endpoint = HTTPNetworkEndpoint(string: "https://api.example.com/users")
 
 let response = try await HTTPClient.post(endpoint)
     .bearer(token: apiToken) // Set bearer token
@@ -75,7 +75,7 @@ Configure a request to automatically retry on failure. You can specify the numbe
 the delay, and the conditions under which a retry should occur.
 
 ```swift
-let endpoint = HTTPNetworkEndpoint(baseURL: "https://api.example.com", path: "/users")
+let endpoint = HTTPNetworkEndpoint(string: "https://api.example.com/users/1")
 let response = try await HTTPClient.get(endpoint)
     // Retry 3 times with a 2-second delay between attempts
     .retry(3, delay: 2.0) { error, attempt in
@@ -91,7 +91,7 @@ let response = try await HTTPClient.get(endpoint)
 Handle specific networking errors by catching the `NetworkingError` enum.
 
 ```swift
-let endpoint = HTTPNetworkEndpoint(baseURL: "https://api.example.com", path: "/not-found")
+let endpoint = HTTPNetworkEndpoint(string: "https://api.example.com/not-found")
 do {
     try await HTTPClient.get(endpoint).send()
 } catch let error as NetworkingError {

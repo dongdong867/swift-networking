@@ -8,9 +8,16 @@
 
 import Foundation
 
-final class HTTPRequest {
+/// A configurable HTTP request builder and executor.
+///
+/// `HTTPRequest` is designed to be created by `HTTPClient` helpers
+/// (e.g. `HTTPClient.get(...)`) and then configured via a fluent API.
+/// After configuration call `send()` to perform the request.
+///
+public final class HTTPRequest {
     internal var url: URL
     internal var method: HTTPMethod
+
     internal var headers: [String: String] = [:]
     internal var queryParameters: [String: String] = [:]
     internal var body: Data?
@@ -20,9 +27,12 @@ final class HTTPRequest {
     // Retry configuration
     internal var retryCount: Int = 0
     internal var retryDelay: TimeInterval = 1
-    internal var shouldRetryBlock: ((Error, Int) -> Bool)?
+    internal var shouldRetryBlock: (@Sendable (Error, Int) -> Bool)?
 
-    init(url: URL, method: HTTPMethod) {
+    /// Construct an `HTTPRequest` with the specified URL and HTTP method.
+    ///
+    /// - Important: This initializer is `internal` to enforce usage via `HTTPClient` helpers.
+    internal init(url: URL, method: HTTPMethod) {
         self.url = url
         self.method = method
     }
@@ -37,7 +47,7 @@ extension HTTPRequest {
     ///   - value: Header field value.
     /// - Returns: Self for method chaining.
     @discardableResult
-    func header(_ key: String, _ value: String) -> HTTPRequest {
+    public func header(_ key: String, _ value: String) -> HTTPRequest {
         self.headers[key] = value
         return self
     }
@@ -47,7 +57,7 @@ extension HTTPRequest {
     /// - Parameter headers: Dictionary of header fields to set.
     /// - Returns: Self for method chaining.
     @discardableResult
-    func headers(_ headers: [String: String]) -> HTTPRequest {
+    public func headers(_ headers: [String: String]) -> HTTPRequest {
         self.headers.merge(headers) { _, new in new }
         return self
     }
@@ -59,7 +69,7 @@ extension HTTPRequest {
     ///   - password: The password for basic auth.
     /// - Returns: Self for method chaining.
     @discardableResult
-    func basic(username: String, password: String) -> HTTPRequest {
+    public func basic(username: String, password: String) -> HTTPRequest {
         let base64 = Data("\(username):\(password)".utf8).base64EncodedString()
         self.headers["Authorization"] = "Basic \(base64)"
         return self
@@ -70,7 +80,7 @@ extension HTTPRequest {
     /// - Parameter token: The bearer token.
     /// - Returns: Self for method chaining.
     @discardableResult
-    func bearer(token: String) -> HTTPRequest {
+    public func bearer(token: String) -> HTTPRequest {
         self.headers["Authorization"] = "Bearer \(token)"
         return self
     }
@@ -80,7 +90,7 @@ extension HTTPRequest {
     /// - Parameter value: The User-Agent string.
     /// - Returns: Self for method chaining.
     @discardableResult
-    func userAgent(_ value: String) -> HTTPRequest {
+    public func userAgent(_ value: String) -> HTTPRequest {
         guard !value.isEmpty else { return self }
         self.headers["User-Agent"] = value
         return self
@@ -96,7 +106,7 @@ extension HTTPRequest {
     ///   - value: Query parameter value.
     /// - Returns: Self for method chaining.
     @discardableResult
-    func query(_ key: String, _ value: String) -> HTTPRequest {
+    public func query(_ key: String, _ value: String) -> HTTPRequest {
         self.queryParameters[key] = value
         return self
     }
@@ -106,7 +116,7 @@ extension HTTPRequest {
     /// - Parameter parameters: Dictionary of query parameters to merge.
     /// - Returns: Self for method chaining.
     @discardableResult
-    func queries(_ parameters: [String: String]) -> HTTPRequest {
+    public func queries(_ parameters: [String: String]) -> HTTPRequest {
         self.queryParameters.merge(parameters) { _, new in new }
         return self
     }
@@ -119,7 +129,7 @@ extension HTTPRequest {
     /// - Parameter data: Body bytes to send.
     /// - Returns: Self for method chaining.
     @discardableResult
-    func body(_ data: Data) -> HTTPRequest {
+    public func body(_ data: Data) -> HTTPRequest {
         self.body = data
         return self
     }
@@ -132,7 +142,7 @@ extension HTTPRequest {
     /// - Returns: Self after setting the JSON body and `Content-Type` header.
     /// - Throws: Any encoding error thrown by the encoder.
     @discardableResult
-    func jsonBody<T: Encodable>(
+    public func jsonBody<T: Encodable>(
         _ object: T, encoder: JSONEncoder = JSONEncoder()
     ) throws -> HTTPRequest {
         self.body = try encoder.encode(object)
@@ -148,17 +158,19 @@ extension HTTPRequest {
     /// - Parameter statusCodes: Range of acceptable status codes
     /// - Returns: Self for method chaining
     @discardableResult
-    func acceptStatusCodes(_ statusCodes: ClosedRange<Int>) -> HTTPRequest {
+    public func acceptStatusCodes(_ statusCodes: ClosedRange<Int>) -> HTTPRequest {
         self.validStatusCodes = statusCodes
         return self
     }
 
-    /// Disable automatic status code validation (errors only thrown on manual .validate())
+    /// Disable automatic status code validation
+    ///
+    /// - Information: You can still manually setup validation logic in `HTTPResponse.validate(statusCodes:)`
     ///
     /// - Returns: Self for method chaining
     @discardableResult
-    func skipStatusValidation() -> HTTPRequest {
-        self.validStatusCodes = 0...999  // Accept all status codes
+    public func skipStatusValidation() -> HTTPRequest {
+        self.validStatusCodes = 100...599  // Accept all standard HTTP status codes
         return self
     }
 }
@@ -170,8 +182,8 @@ extension HTTPRequest {
     /// - Parameter interval: Timeout in seconds.
     /// - Returns: Self for method chaining.
     @discardableResult
-    func timeout(_ interval: TimeInterval) -> HTTPRequest {
-        self.timeoutInterval = interval
+    public func timeout(_ interval: TimeInterval) -> HTTPRequest {
+        self.timeoutInterval = max(0, interval)
         return self
     }
 
@@ -183,10 +195,10 @@ extension HTTPRequest {
     ///   - if: Optional closure that determines whether to retry for a given error/attempt.
     /// - Returns: Self for method chaining.
     @discardableResult
-    func retry(
+    public func retry(
         _ count: Int,
         delay: TimeInterval = 0,
-        if condition: ((Error, Int) -> Bool)? = nil
+        if condition: (@Sendable (Error, Int) -> Bool)? = nil
     ) -> HTTPRequest {
         self.retryCount = max(0, count)
         self.retryDelay = max(0, delay)
@@ -199,9 +211,11 @@ extension HTTPRequest {
 extension HTTPRequest {
     /// Executes the request with retry logic and returns HTTPResponse for chaining
     ///
-    /// - Returns: An `HTTPResponse` object for method chaning.
+    /// - Returns: An `HTTPResponse` object for method chaining.
     /// - Throws: Networking errors or URLSession errors encountered during the request.
-    func send() async throws -> HTTPResponse {
+    /// Note: `HTTPResponse` is expected to be public in the module so callers can use the
+    /// returned value for validation and decoding.
+    public func send() async throws -> HTTPResponse {
         let (data, httpResponse) = try await executeWithRetry(operation: performSingleRequest)
         return HTTPResponse(data: data, httpResponse: httpResponse)
     }
@@ -218,7 +232,7 @@ extension HTTPRequest {
     }
 
     /// Validates the URLResponse is an HTTPURLResponse
-    private func validateHTTPResponse(_ response: URLResponse) throws -> HTTPURLResponse {
+    internal func validateHTTPResponse(_ response: URLResponse) throws -> HTTPURLResponse {
         guard let httpResponse = response as? HTTPURLResponse
         else { throw NetworkingError.invalidResponse }
 
@@ -226,7 +240,7 @@ extension HTTPRequest {
     }
 
     /// Validates HTTP status codes against configured acceptable range
-    private func validateHTTPStatusCode(_ httpResponse: HTTPURLResponse) throws {
+    internal func validateHTTPStatusCode(_ httpResponse: HTTPURLResponse) throws {
         let statusCode = httpResponse.statusCode
 
         guard validStatusCodes.contains(statusCode) else {
@@ -238,14 +252,14 @@ extension HTTPRequest {
 // MARK: - URLRequest Building
 extension HTTPRequest {
     /// Build and configure a `URLRequest` from the stored values.
-    private func buildURLRequest() throws -> URLRequest {
+    internal func buildURLRequest() throws -> URLRequest {
         let urlComponents = try createURLComponents()
         let url = try buildURL(from: urlComponents)
         return configureURLRequest(with: url)
     }
 
     /// Create `URLComponents` from the base URL and query parameters.
-    private func createURLComponents() throws -> URLComponents {
+    internal func createURLComponents() throws -> URLComponents {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         else {
             throw NetworkingError.invalidURL
@@ -261,7 +275,7 @@ extension HTTPRequest {
     }
 
     /// Finalize `URL` from `URLComponents`.
-    private func buildURL(from components: URLComponents) throws -> URL {
+    internal func buildURL(from components: URLComponents) throws -> URL {
         guard let url = components.url
         else {
             throw NetworkingError.invalidURL
@@ -270,7 +284,7 @@ extension HTTPRequest {
     }
 
     /// Configure a `URLRequest` with method, headers, timeout, and body.
-    private func configureURLRequest(with url: URL) -> URLRequest {
+    internal func configureURLRequest(with url: URL) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.timeoutInterval = timeoutInterval
@@ -287,7 +301,7 @@ extension HTTPRequest {
 // MARK: - Retry Handling
 extension HTTPRequest {
     /// Execute an operation with the configured retry strategy.
-    private func executeWithRetry<T>(
+    internal func executeWithRetry<T>(
         operation: () async throws -> T
     ) async throws -> T {
         var lastError: Error?
@@ -300,7 +314,7 @@ extension HTTPRequest {
                 let shouldContinue = try handleRetryLogic(error: error, attempt: attempt)
                 guard shouldContinue else { throw error }
 
-                try await Task.sleep(nanoseconds: UInt64(retryDelay * 1_000_000_000))
+                try await Task.sleep(for: .seconds(retryDelay))
             }
         }
 
@@ -310,7 +324,7 @@ extension HTTPRequest {
     }
 
     /// Handles retry decision and delay
-    private func handleRetryLogic(error: Error, attempt: Int) throws -> Bool {
+    internal func handleRetryLogic(error: Error, attempt: Int) throws -> Bool {
         guard
             attempt < retryCount,
             shouldRetryBlock?(error, attempt) ?? defaultShouldRetry(error: error)
@@ -324,6 +338,8 @@ extension HTTPRequest {
     /// Retries when the error represents a server-side failure (HTTP 5xx) or
     /// transient networking problems such as timeouts or connection loss.
     /// Does not retry for client-side errors (HTTP 4xx).
+    ///
+    /// - Important: Function visibility is `internal` to allow testing.
     internal func defaultShouldRetry(error: Error) -> Bool {
         if case NetworkingError.statusCode(let code) = error {
             return code >= 500
@@ -333,7 +349,7 @@ extension HTTPRequest {
         else { return false }
 
         switch urlError.code {
-        case .timedOut, .networkConnectionLost:
+        case .timedOut, .networkConnectionLost, .cannotConnectToHost, .dnsLookupFailed:
             return true
         default:
             return false
