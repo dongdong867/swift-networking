@@ -51,37 +51,32 @@ jobs:
           PR_NUMBER="${{ github.event.pull_request.number }}"
           REPO="${{ github.repository }}"
           FILES=$(gh pr diff "$PR_NUMBER" --repo "$REPO" --name-only)
-
           LABELS=""
-
-          add_label() {
-            if echo "$LABELS" | grep -qv "$1"; then
-              LABELS="$LABELS $1"
-            fi
-          }
 
           while IFS= read -r file; do
             case "$file" in
               Sources/Networking/Client/*|Sources/Networking/Request/*|Sources/Networking/Response/*|Sources/Networking/Transport/*)
-                add_label "area: core" ;;
+                LABELS="$LABELS"$'\n'"area: core" ;;
               Sources/Networking/Middleware/*)
-                add_label "area: middleware" ;;
+                LABELS="$LABELS"$'\n'"area: middleware" ;;
               Sources/Networking/Macros/*|Sources/NetworkingMacros/*)
-                add_label "area: macro" ;;
+                LABELS="$LABELS"$'\n'"area: macro" ;;
               Sources/NetworkingSSE/*)
-                add_label "area: sse" ;;
+                LABELS="$LABELS"$'\n'"area: sse" ;;
               Sources/NetworkingWebSocket/*)
-                add_label "area: websocket" ;;
+                LABELS="$LABELS"$'\n'"area: websocket" ;;
               Sources/Networking/Encoding/*)
-                add_label "area: encoding" ;;
+                LABELS="$LABELS"$'\n'"area: encoding" ;;
               Tests/*)
-                add_label "area: test" ;;
+                LABELS="$LABELS"$'\n'"area: test" ;;
               .github/*)
-                add_label "area: ci" ;;
+                LABELS="$LABELS"$'\n'"area: ci" ;;
             esac
           done <<< "$FILES"
 
-          for label in $LABELS; do
+          # Deduplicate and apply labels
+          echo "$LABELS" | sort -u | while IFS= read -r label; do
+            [ -z "$label" ] && continue
             gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$label"
             echo "Added label: $label"
           done
