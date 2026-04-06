@@ -1,0 +1,67 @@
+name: Documentation
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  deploy-docs:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build documentation
+        run: |
+          swift package \
+            --allow-writing-to-directory ./docs \
+            generate-documentation \
+            --target Networking \
+            --disable-indexing \
+            --transform-for-static-hosting \
+            --hosting-base-path swift-networking \
+            --output-path ./docs
+
+      - name: Deploy to GitHub Pages
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Fetch gh-pages or create it as an orphan branch
+          if git ls-remote --exit-code origin gh-pages > /dev/null 2>&1; then
+            git fetch origin gh-pages
+            git checkout gh-pages
+          else
+            git checkout --orphan gh-pages
+            git rm -rf . 2>/dev/null || true
+          fi
+
+          # Copy docs to versioned directory
+          rm -rf "$VERSION"
+          cp -r docs "$VERSION"
+
+          # Copy docs to root as latest
+          find . -maxdepth 1 \
+            -not -name '.' \
+            -not -name '.git' \
+            -not -name '.nojekyll' \
+            -not -regex './[0-9].*' \
+            -exec rm -rf {} +
+          cp -r docs/* .
+
+          # Ensure GitHub Pages doesn't process with Jekyll
+          touch .nojekyll
+
+          # Commit and push
+          git add -A
+          git commit -m "docs: deploy $VERSION documentation" || echo "No changes to commit"
+          git push origin gh-pages
