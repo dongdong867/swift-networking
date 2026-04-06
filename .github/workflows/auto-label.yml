@@ -1,0 +1,82 @@
+name: Auto Label
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label-by-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label by branch prefix
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          PREFIX="${BRANCH%%/*}"
+
+          case "$PREFIX" in
+            feat)     LABEL="feature" ;;
+            fix)      LABEL="bug" ;;
+            refactor) LABEL="refactor" ;;
+            chore)    LABEL="chore" ;;
+            test)     LABEL="test" ;;
+            docs)     LABEL="docs" ;;
+            perf)     LABEL="perf" ;;
+            *)        LABEL="" ;;
+          esac
+
+          if [ -n "$LABEL" ]; then
+            gh pr edit "${{ github.event.pull_request.number }}" \
+              --repo "${{ github.repository }}" \
+              --add-label "$LABEL"
+            echo "Added label: $LABEL"
+          else
+            echo "No matching label for branch prefix: $PREFIX"
+          fi
+
+  label-by-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Label by changed files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+          FILES=$(gh pr diff "$PR_NUMBER" --repo "$REPO" --name-only)
+          LABELS=""
+
+          while IFS= read -r file; do
+            case "$file" in
+              Sources/Networking/Client/*|Sources/Networking/Request/*|Sources/Networking/Response/*|Sources/Networking/Transport/*)
+                LABELS="$LABELS"$'\n'"area: core" ;;
+              Sources/Networking/Middleware/*)
+                LABELS="$LABELS"$'\n'"area: middleware" ;;
+              Sources/Networking/Macros/*|Sources/NetworkingMacros/*)
+                LABELS="$LABELS"$'\n'"area: macro" ;;
+              Sources/NetworkingSSE/*)
+                LABELS="$LABELS"$'\n'"area: sse" ;;
+              Sources/NetworkingWebSocket/*)
+                LABELS="$LABELS"$'\n'"area: websocket" ;;
+              Sources/Networking/Encoding/*)
+                LABELS="$LABELS"$'\n'"area: encoding" ;;
+              Tests/*)
+                LABELS="$LABELS"$'\n'"area: test" ;;
+              .github/*)
+                LABELS="$LABELS"$'\n'"area: ci" ;;
+            esac
+          done <<< "$FILES"
+
+          # Deduplicate and apply labels
+          echo "$LABELS" | sort -u | while IFS= read -r label; do
+            [ -z "$label" ] && continue
+            gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$label"
+            echo "Added label: $label"
+          done
