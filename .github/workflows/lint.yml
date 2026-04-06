@@ -1,0 +1,26 @@
+name: Lint
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          brew install swiftlint
+          brew install swift-format
+
+      - name: Check formatting
+        run: make format-check
+
+      - name: Lint
+        run: make lint
