@@ -166,6 +166,49 @@ Only executes when the key has a value. For optional metadata keys from `@Contex
 | `Timeout(default:)` | Per-request override | `timeout` |
 | `Deduplicate(scope:, ttl:)` | GET-only by default | `deduplicate` |
 
+## Token Refresh Pattern
+
+The `Authenticate` middleware uses an actor-based `TokenStore` to handle concurrent token refresh:
+
+```swift
+actor TokenStore {
+    private var accessToken: String
+    private var refreshToken: String
+    private var refreshTask: Task<String, Error>?
+
+    var current: String {
+        get async throws {
+            if isExpired(accessToken) { return try await refresh() }
+            return accessToken
+        }
+    }
+
+    func refresh() async throws -> String {
+        if let task = refreshTask { return try await task.value }
+        let task = Task { /* call refresh endpoint, update tokens */ }
+        refreshTask = task
+        defer { refreshTask = nil }
+        return try await task.value
+    }
+}
+```
+
+Multiple concurrent 401s await the same `refreshTask` — only one refresh occurs.
+
+**Important:** The auth refresh endpoint must NOT use `@Authenticated` to avoid circular dependency. The auth client should use a separate `NetworkClient` without `Authenticate` middleware.
+
+## Error Passthrough
+
+Middleware-thrown errors pass through untouched — they are NOT wrapped into `NetworkError`. The library only wraps errors from its own pipeline (status validation, decoding, transport, encoding). This gives middleware authors full control over custom error types:
+
+```swift
+// Library errors:
+catch let error as NetworkError { switch error.kind { ... } }
+
+// Middleware errors pass through as-is:
+catch let error as AuthError { ... }
+```
+
 ## Annotations → Metadata → Middleware
 
 Annotations set metadata tags on Request. Middleware reads them. Clean separation — annotations describe characteristics, middleware decides behavior.
