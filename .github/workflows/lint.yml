@@ -3,16 +3,29 @@ name: Lint
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'Sources/**'
-      - 'Tests/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - 'Sources/**'
+              - 'Tests/**'
+
   lint:
+    needs: changes
+    if: needs.changes.outputs.src == 'true'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
