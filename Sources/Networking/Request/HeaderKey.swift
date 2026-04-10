@@ -4,6 +4,14 @@ public struct HeaderKey: Sendable, Hashable {
     public init(_ rawValue: String) {
         self.rawValue = rawValue
     }
+
+    public static func == (lhs: HeaderKey, rhs: HeaderKey) -> Bool {
+        lhs.rawValue.lowercased() == rhs.rawValue.lowercased()
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        rawValue.lowercased().hash(into: &hasher)
+    }
 }
 
 extension HeaderKey {
