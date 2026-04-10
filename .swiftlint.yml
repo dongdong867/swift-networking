@@ -4,9 +4,6 @@ included:
   - Sources
   - Tests
 
-excluded:
-  - Resource
-
 disabled_rules:
   - identifier_name
   - line_length
@@ -76,7 +73,7 @@ opt_in_rules:
   - private_action
   - private_outlet
   - redundant_nil_coalescing
-  - redundant_self_in_closure
+  - redundant_self
   - redundant_type_annotation
   - required_enum_case
   - return_value_from_void_function
