@@ -4,35 +4,38 @@ import Testing
 
 @Suite("HeaderKey")
 struct HeaderKeyTests {
-
     @Suite("Built-in Keys")
     struct BuiltInKeys {
-
-        @Test func accept() {
+        @Test
+        func accept() {
             #expect(HeaderKey.accept.rawValue == "Accept")
         }
 
-        @Test func authorization() {
+        @Test
+        func authorization() {
             #expect(HeaderKey.authorization.rawValue == "Authorization")
         }
 
-        @Test func cacheControl() {
+        @Test
+        func cacheControl() {
             #expect(HeaderKey.cacheControl.rawValue == "Cache-Control")
         }
 
-        @Test func contentType() {
+        @Test
+        func contentType() {
             #expect(HeaderKey.contentType.rawValue == "Content-Type")
         }
 
-        @Test func userAgent() {
+        @Test
+        func userAgent() {
             #expect(HeaderKey.userAgent.rawValue == "User-Agent")
         }
     }
 
     @Suite("Custom Keys")
     struct CustomKeys {
-
-        @Test func customKeyPreservesRawValue() {
+        @Test
+        func customKeyPreservesRawValue() {
             let key = HeaderKey("X-Request-ID")
             #expect(key.rawValue == "X-Request-ID")
         }
@@ -40,27 +43,30 @@ struct HeaderKeyTests {
 
     @Suite("Case Insensitivity")
     struct CaseInsensitivity {
-
-        @Test func equalityIsCaseInsensitive() {
+        @Test
+        func equalityIsCaseInsensitive() {
             let upper = HeaderKey("Content-Type")
             let lower = HeaderKey("content-type")
             #expect(upper == lower)
         }
 
-        @Test func hashValueIsCaseInsensitive() {
+        @Test
+        func hashValueIsCaseInsensitive() {
             let upper = HeaderKey("Content-Type")
             let lower = HeaderKey("content-type")
             #expect(upper.hashValue == lower.hashValue)
         }
 
-        @Test func rawValuePreservesOriginalCasing() {
+        @Test
+        func rawValuePreservesOriginalCasing() {
             let upper = HeaderKey("Content-Type")
             let lower = HeaderKey("content-type")
             #expect(upper.rawValue == "Content-Type")
             #expect(lower.rawValue == "content-type")
         }
 
-        @Test func deduplicatesInSet() {
+        @Test
+        func deduplicatesInSet() {
             let set: Set<HeaderKey> = [
                 HeaderKey("Content-Type"),
                 HeaderKey("content-type"),

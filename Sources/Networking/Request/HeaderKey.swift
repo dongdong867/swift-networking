@@ -5,7 +5,7 @@ public struct HeaderKey: Sendable, Hashable {
         self.rawValue = rawValue
     }
 
-    public static func == (lhs: HeaderKey, rhs: HeaderKey) -> Bool {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.rawValue.lowercased() == rhs.rawValue.lowercased()
     }
 

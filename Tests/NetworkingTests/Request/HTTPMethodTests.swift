@@ -4,51 +4,58 @@ import Testing
 
 @Suite("HTTPMethod")
 struct HTTPMethodTests {
-
     @Suite("Raw Values")
     struct RawValues {
-
-        @Test func get() {
+        @Test
+        func get() {
             #expect(HTTPMethod.get.rawValue == "GET")
         }
 
-        @Test func post() {
+        @Test
+        func post() {
             #expect(HTTPMethod.post.rawValue == "POST")
         }
 
-        @Test func put() {
+        @Test
+        func put() {
             #expect(HTTPMethod.put.rawValue == "PUT")
         }
 
-        @Test func delete() {
+        @Test
+        func delete() {
             #expect(HTTPMethod.delete.rawValue == "DELETE")
         }
 
-        @Test func patch() {
+        @Test
+        func patch() {
             #expect(HTTPMethod.patch.rawValue == "PATCH")
         }
     }
 
     @Suite("Idempotency")
     struct Idempotency {
-
-        @Test func getIsIdempotent() {
+        @Test
+        func getIsIdempotent() {
             #expect(HTTPMethod.get.isIdempotent == true)
         }
 
-        @Test func putIsIdempotent() {
+        @Test
+        func putIsIdempotent() {
             #expect(HTTPMethod.put.isIdempotent == true)
         }
 
-        @Test func deleteIsIdempotent() {
+        @Test
+        func deleteIsIdempotent() {
             #expect(HTTPMethod.delete.isIdempotent == true)
         }
 
-        @Test func postIsNotIdempotent() {
+        @Test
+        func postIsNotIdempotent() {
             #expect(HTTPMethod.post.isIdempotent == false)
         }
 
-        @Test func patchIsNotIdempotent() {
+        @Test
+        func patchIsNotIdempotent() {
             #expect(HTTPMethod.patch.isIdempotent == false)
         }
     }

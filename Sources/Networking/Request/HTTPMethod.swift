@@ -1,15 +1,15 @@
 public enum HTTPMethod: String, Sendable {
+    case delete = "DELETE"
     case get = "GET"
+    case patch = "PATCH"
     case post = "POST"
     case put = "PUT"
-    case delete = "DELETE"
-    case patch = "PATCH"
 
     public var isIdempotent: Bool {
         switch self {
-        case .get, .put, .delete:
+        case .delete, .get, .put:
             true
-        case .post, .patch:
+        case .patch, .post:
             false
         }
     }
