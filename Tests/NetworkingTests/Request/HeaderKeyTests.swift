@@ -59,5 +59,13 @@ struct HeaderKeyTests {
             #expect(upper.rawValue == "Content-Type")
             #expect(lower.rawValue == "content-type")
         }
+
+        @Test func deduplicatesInSet() {
+            let set: Set<HeaderKey> = [
+                HeaderKey("Content-Type"),
+                HeaderKey("content-type"),
+            ]
+            #expect(set.count == 1)
+        }
     }
 }
