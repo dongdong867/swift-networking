@@ -237,6 +237,40 @@ struct RequestTests {
         }
     }
 
+    @Suite("Three Write Paths")
+    struct ThreeWritePaths {
+        @Test
+        func builderSubscriptAndRawDictAllSetHeaders() {
+            let viaBuilder = Request.get("/a")
+                .header(.authorization, "token")
+
+            var viaSubscript = Request.get("/a")
+            viaSubscript[header: .authorization] = "token"
+
+            var viaRawDict = Request.get("/a")
+            viaRawDict.headers[.authorization] = "token"
+
+            #expect(viaBuilder.headers[.authorization] == "token")
+            #expect(viaSubscript.headers[.authorization] == "token")
+            #expect(viaRawDict.headers[.authorization] == "token")
+        }
+    }
+
+    @Suite("Path Validation")
+    struct PathValidation {
+        @Test
+        func emptyPathAccepted() {
+            let request = Request.get("")
+            #expect(request.path == "")
+        }
+
+        @Test
+        func nonSlashPrefixedPathAccepted() {
+            let request = Request.get("users")
+            #expect(request.path == "users")
+        }
+    }
+
     @Suite("Acceptance")
     struct Acceptance {
         @Test
