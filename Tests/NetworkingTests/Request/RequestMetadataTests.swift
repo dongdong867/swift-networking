@@ -17,9 +17,9 @@ private enum PriorityKey: RequestMetadataKey {
 }
 
 private enum Priority: Sendable {
+    case high
     case low
     case normal
-    case high
 }
 
 // MARK: - Tests
@@ -31,7 +31,7 @@ struct RequestMetadataTests {
         @Test
         func returnsDefaultValueWhenNoValueSet() {
             let metadata = RequestMetadata()
-            #expect(metadata[StringKey.self] == "")
+            #expect(metadata[StringKey.self].isEmpty)
         }
 
         @Test
@@ -89,7 +89,7 @@ struct RequestMetadataTests {
             var metadata = RequestMetadata()
 
             // AC2: Empty metadata returns default
-            #expect(metadata[StringKey.self] == "")
+            #expect(metadata[StringKey.self].isEmpty)
             #expect(metadata[IntKey.self] == 0)
 
             // AC2: Set and read back
