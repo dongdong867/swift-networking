@@ -38,10 +38,14 @@ extension NetworkError {
 // MARK: - Convenience Properties
 
 extension NetworkError {
-    public var statusCode: Int? { response?.statusCode }
+    public var statusCode: Int? {
+        guard case .invalidStatus(let code) = kind else { return nil }
+        return code
+    }
+
     public var body: Data? { response?.body }
     public var headers: [HeaderKey: String]? { response?.headers }
-    public var isClientError: Bool { response?.isClientError ?? false }
-    public var isServerError: Bool { response?.isServerError ?? false }
+    public var isClientError: Bool { statusCode.map { (400...499).contains($0) } ?? false }
+    public var isServerError: Bool { statusCode.map { (500...599).contains($0) } ?? false }
 }
 
