@@ -10,4 +10,9 @@ public struct Response: Sendable, Equatable {
         self.headers = headers
         self.body = body
     }
+
+    public var isSuccess: Bool { (200...299).contains(statusCode) }
+    public var isRedirect: Bool { (300...399).contains(statusCode) }
+    public var isClientError: Bool { (400...499).contains(statusCode) }
+    public var isServerError: Bool { (500...599).contains(statusCode) }
 }
