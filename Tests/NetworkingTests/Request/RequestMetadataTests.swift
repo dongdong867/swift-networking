@@ -60,6 +60,28 @@ struct RequestMetadataTests {
         }
     }
 
+    @Suite("Multiple Keys")
+    struct MultipleKeys {
+        @Test
+        func settingOneKeyDoesNotAffectAnother() {
+            var metadata = RequestMetadata()
+            metadata[StringKey.self] = "hello"
+            metadata[IntKey.self] = 42
+
+            #expect(metadata[StringKey.self] == "hello")
+            #expect(metadata[IntKey.self] == 42)
+        }
+
+        @Test
+        func unsettedKeyReturnsDefaultWhileOtherIsSet() {
+            var metadata = RequestMetadata()
+            metadata[StringKey.self] = "hello"
+
+            #expect(metadata[IntKey.self] == 0)
+            #expect(metadata[PriorityKey.self] == .normal)
+        }
+    }
+
     @Suite("Acceptance")
     struct Acceptance {
         @Test
