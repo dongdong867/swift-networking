@@ -6,6 +6,24 @@ import Testing
 @Suite("NetworkError")
 struct NetworkErrorTests {
 
+    // MARK: - Factories
+
+    static func httpError(statusCode: Int) -> NetworkError {
+        NetworkError(
+            kind: .invalidStatus(statusCode),
+            request: .get("/"),
+            response: Response(statusCode: statusCode, headers: [:], body: Data())
+        )
+    }
+
+    static func transportError(_ error: some Error & Sendable) -> NetworkError {
+        NetworkError(
+            kind: .transportFailed(error),
+            request: .get("/"),
+            response: nil
+        )
+    }
+
     @Suite("Error Structure")
     struct ErrorStructure {
         @Test("carries kind, request, and response")
@@ -128,7 +146,7 @@ struct NetworkErrorTests {
     struct DirectPatternMatching {
         @Test("exact Int match on NetworkError")
         func exactIntMatch() {
-            let error = NetworkError.http(statusCode: 404)
+            let error = NetworkErrorTests.httpError(statusCode: 404)
             switch error {
             case 404:
                 break // passes
@@ -139,7 +157,7 @@ struct NetworkErrorTests {
 
         @Test("range match on NetworkError for 5xx")
         func rangeMatch() {
-            let error = NetworkError.http(statusCode: 503)
+            let error = NetworkErrorTests.httpError(statusCode: 503)
             switch error {
             case 500...:
                 break // passes
@@ -150,7 +168,7 @@ struct NetworkErrorTests {
 
         @Test("non-invalidStatus kind does not match any status code")
         func nonStatusKindNoMatch() {
-            let error = NetworkError.transportError(URLError(.timedOut))
+            let error = NetworkErrorTests.transportError(URLError(.timedOut))
             switch error {
             case 500:
                 Issue.record("transportFailed should not match status codes")
@@ -162,15 +180,14 @@ struct NetworkErrorTests {
 
     @Suite("Convenience Properties with Response")
     struct ConvenienceWithResponse {
-        static let response = Response(
-            statusCode: 404,
-            headers: [.contentType: "application/json"],
-            body: Data("not found".utf8)
-        )
-        static let error = NetworkError(
+        let error = NetworkError(
             kind: .invalidStatus(404),
             request: .get("/test"),
-            response: response
+            response: Response(
+                statusCode: 404,
+                headers: [.contentType: "application/json"],
+                body: Data("not found".utf8)
+            )
         )
 
         @Test("statusCode returns response status code")
@@ -212,7 +229,7 @@ struct NetworkErrorTests {
 
     @Suite("Convenience Properties without Response")
     struct ConvenienceWithoutResponse {
-        static let error = NetworkError(
+        let error = NetworkError(
             kind: .transportFailed(URLError(.notConnectedToInternet)),
             request: .get("/test"),
             response: nil
@@ -248,7 +265,7 @@ struct NetworkErrorTests {
     struct FactoryMethods {
         @Test("http(statusCode:) creates invalidStatus error")
         func httpFactory() {
-            let error = NetworkError.http(statusCode: 500)
+            let error = NetworkErrorTests.httpError(statusCode: 500)
             if case .invalidStatus(500) = error.kind {
                 // passes
             } else {
@@ -259,7 +276,7 @@ struct NetworkErrorTests {
         @Test("transportError creates transportFailed error")
         func transportFactory() {
             let underlying = URLError(.timedOut)
-            let error = NetworkError.transportError(underlying)
+            let error = NetworkErrorTests.transportError(underlying)
             if case .transportFailed = error.kind {
                 // passes
             } else {
@@ -269,7 +286,7 @@ struct NetworkErrorTests {
 
         @Test("factory errors carry stub request")
         func factoryCarriesStubRequest() {
-            let error = NetworkError.http(statusCode: 404)
+            let error = NetworkErrorTests.httpError(statusCode: 404)
             #expect(error.request.method == .get)
         }
     }
@@ -278,7 +295,7 @@ struct NetworkErrorTests {
     struct ErrorConformance {
         @Test("NetworkError conforms to Error and can be thrown")
         func canBeThrown() {
-            let error = NetworkError.http(statusCode: 500)
+            let error = NetworkErrorTests.httpError(statusCode: 500)
             #expect(throws: NetworkError.self) {
                 throw error
             }
