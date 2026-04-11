@@ -149,6 +149,17 @@ struct RequestTests {
                 #expect(request.query[0].name == "page")
                 #expect(request.query[1].name == "limit")
             }
+
+            @Test
+            func duplicateNamesAllowed() {
+                let request = Request.get("/a")
+                    .query("color", "red")
+                    .query("color", "blue")
+
+                #expect(request.query.count == 2)
+                #expect(request.query[0].value == "red")
+                #expect(request.query[1].value == "blue")
+            }
         }
 
         @Suite("Body")
@@ -234,6 +245,16 @@ struct RequestTests {
             request[header: .authorization] = "second"
 
             #expect(request[header: .authorization] == "second")
+        }
+
+        @Test
+        func setToNilRemovesHeader() {
+            var request = Request.get("/a")
+                .header(.authorization, "Bearer token")
+            request[header: .authorization] = nil
+
+            #expect(request[header: .authorization] == nil)
+            #expect(request.headers.isEmpty)
         }
     }
 
