@@ -107,6 +107,17 @@ struct ResponseTests {
         }
 
         @Test
+        func accessHeaderWithDifferentCasing() {
+            let response = Response(
+                statusCode: 200,
+                headers: [HeaderKey("Content-Type"): "application/json"],
+                body: Data()
+            )
+
+            #expect(response[header: HeaderKey("content-type")] == "application/json")
+        }
+
+        @Test
         func accessMissingHeaderReturnsNil() {
             let response = Response(
                 statusCode: 200,
