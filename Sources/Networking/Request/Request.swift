@@ -79,7 +79,7 @@ extension Request {
 
 extension Request {
     public subscript(header key: HeaderKey) -> String? {
-        get { nil }
-        set {}
+        get { headers[key] }
+        set { headers[key] = newValue }
     }
 }

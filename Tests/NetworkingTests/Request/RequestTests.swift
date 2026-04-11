@@ -202,6 +202,41 @@ struct RequestTests {
         }
     }
 
+    @Suite("Header Subscript")
+    struct HeaderSubscript {
+        @Test
+        func getReturnsValueWhenSet() {
+            let request = Request.get("/a")
+                .header(.authorization, "Bearer token")
+
+            #expect(request[header: .authorization] == "Bearer token")
+        }
+
+        @Test
+        func getReturnsNilWhenMissing() {
+            let request = Request.get("/a")
+
+            #expect(request[header: .authorization] == nil)
+        }
+
+        @Test
+        func setUpdatesHeaderInPlace() {
+            var request = Request.get("/a")
+            request[header: .authorization] = "Bearer token"
+
+            #expect(request.headers[.authorization] == "Bearer token")
+        }
+
+        @Test
+        func setOverwritesExistingValue() {
+            var request = Request.get("/a")
+                .header(.authorization, "first")
+            request[header: .authorization] = "second"
+
+            #expect(request[header: .authorization] == "second")
+        }
+    }
+
     @Suite("Acceptance")
     struct Acceptance {
         @Test
