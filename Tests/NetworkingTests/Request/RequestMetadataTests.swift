@@ -26,6 +26,40 @@ private enum Priority: Sendable {
 
 @Suite("RequestMetadata")
 struct RequestMetadataTests {
+    @Suite("Subscript Read")
+    struct SubscriptRead {
+        @Test
+        func returnsDefaultValueWhenNoValueSet() {
+            let metadata = RequestMetadata()
+            #expect(metadata[StringKey.self] == "")
+        }
+
+        @Test
+        func returnsDefaultValueForDifferentTypes() {
+            let metadata = RequestMetadata()
+            #expect(metadata[IntKey.self] == 0)
+            #expect(metadata[PriorityKey.self] == .normal)
+        }
+    }
+
+    @Suite("Subscript Write")
+    struct SubscriptWrite {
+        @Test
+        func setAndReadBack() {
+            var metadata = RequestMetadata()
+            metadata[StringKey.self] = "hello"
+            #expect(metadata[StringKey.self] == "hello")
+        }
+
+        @Test
+        func overwriteReturnsLatestValue() {
+            var metadata = RequestMetadata()
+            metadata[StringKey.self] = "hello"
+            metadata[StringKey.self] = "world"
+            #expect(metadata[StringKey.self] == "world")
+        }
+    }
+
     @Suite("Acceptance")
     struct Acceptance {
         @Test
