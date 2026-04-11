@@ -51,19 +51,27 @@ extension Request {
 
 extension Request {
     public func header(_ key: HeaderKey, _ value: String) -> Request {
-        self
+        var copy = self
+        copy.headers[key] = value
+        return copy
     }
 
     public func query(_ name: String, _ value: String) -> Request {
-        self
+        var copy = self
+        copy.query.append(URLQueryItem(name: name, value: value))
+        return copy
     }
 
     public func body(_ body: Data) -> Request {
-        self
+        var copy = self
+        copy.body = body
+        return copy
     }
 
     public func metadata<K: RequestMetadataKey>(_ key: K.Type, _ value: K.Value) -> Request {
-        self
+        var copy = self
+        copy.metadata[key] = value
+        return copy
     }
 }
 

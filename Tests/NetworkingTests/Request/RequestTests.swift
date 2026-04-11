@@ -96,6 +96,85 @@ struct RequestTests {
         }
     }
 
+    @Suite("Builders")
+    struct Builders {
+        @Suite("Header")
+        struct Header {
+            @Test
+            func addsHeader() {
+                let request = Request.get("/a")
+                    .header(.authorization, "Bearer token")
+
+                #expect(request.headers[.authorization] == "Bearer token")
+            }
+
+            @Test
+            func originalUnchanged() {
+                let original = Request.get("/a")
+                let modified = original.header(.authorization, "Bearer token")
+
+                #expect(original.headers.isEmpty)
+                #expect(modified.headers[.authorization] == "Bearer token")
+            }
+
+            @Test
+            func sameKeyOverwrites() {
+                let request = Request.get("/a")
+                    .header(.authorization, "first")
+                    .header(.authorization, "second")
+
+                #expect(request.headers[.authorization] == "second")
+            }
+        }
+
+        @Suite("Query")
+        struct Query {
+            @Test
+            func appendsQueryItem() {
+                let request = Request.get("/a")
+                    .query("page", "1")
+
+                #expect(request.query.count == 1)
+                #expect(request.query.first?.name == "page")
+                #expect(request.query.first?.value == "1")
+            }
+
+            @Test
+            func preservesExistingItems() {
+                let request = Request.get("/a")
+                    .query("page", "1")
+                    .query("limit", "10")
+
+                #expect(request.query.count == 2)
+                #expect(request.query[0].name == "page")
+                #expect(request.query[1].name == "limit")
+            }
+        }
+
+        @Suite("Body")
+        struct Body {
+            @Test
+            func setsBody() {
+                let data = Data("{}".utf8)
+                let request = Request.get("/a")
+                    .body(data)
+
+                #expect(request.body == data)
+            }
+        }
+
+        @Suite("Metadata")
+        struct Metadata {
+            @Test
+            func setsMetadataKey() {
+                let request = Request.get("/a")
+                    .metadata(TagKey.self, "tagged")
+
+                #expect(request.metadata[TagKey.self] == "tagged")
+            }
+        }
+    }
+
     @Suite("Acceptance")
     struct Acceptance {
         @Test
