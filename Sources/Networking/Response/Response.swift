@@ -11,6 +11,10 @@ public struct Response: Sendable, Equatable {
         self.body = body
     }
 
+    public subscript(header key: HeaderKey) -> String? {
+        headers[key]
+    }
+
     public var isSuccess: Bool { (200...299).contains(statusCode) }
     public var isRedirect: Bool { (300...399).contains(statusCode) }
     public var isClientError: Bool { (400...499).contains(statusCode) }
