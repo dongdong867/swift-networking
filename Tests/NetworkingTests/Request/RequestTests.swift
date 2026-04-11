@@ -175,6 +175,33 @@ struct RequestTests {
         }
     }
 
+    @Suite("Builder Chaining")
+    struct BuilderChaining {
+        @Test
+        func allBuildersInDifferentOrders() {
+            let body = Data("{}".utf8)
+
+            let orderA = Request.post("/items")
+                .header(.contentType, "application/json")
+                .query("v", "2")
+                .body(body)
+                .metadata(TagKey.self, "a")
+
+            let orderB = Request.post("/items")
+                .body(body)
+                .metadata(TagKey.self, "a")
+                .header(.contentType, "application/json")
+                .query("v", "2")
+
+            #expect(orderA.method == orderB.method)
+            #expect(orderA.path == orderB.path)
+            #expect(orderA.headers == orderB.headers)
+            #expect(orderA.query == orderB.query)
+            #expect(orderA.body == orderB.body)
+            #expect(orderA.metadata[TagKey.self] == orderB.metadata[TagKey.self])
+        }
+    }
+
     @Suite("Acceptance")
     struct Acceptance {
         @Test
