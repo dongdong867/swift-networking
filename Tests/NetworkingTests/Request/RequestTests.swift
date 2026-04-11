@@ -13,6 +13,89 @@ private enum TagKey: RequestMetadataKey {
 
 @Suite("Request")
 struct RequestTests {
+    @Suite("Static Factories")
+    struct StaticFactories {
+        @Test
+        func getFactory() {
+            let request = Request.get("/users")
+
+            #expect(request.method == .get)
+            #expect(request.path == "/users")
+        }
+
+        @Test
+        func postFactory() {
+            let request = Request.post("/items")
+
+            #expect(request.method == .post)
+            #expect(request.path == "/items")
+        }
+
+        @Test
+        func putFactory() {
+            let request = Request.put("/items/1")
+
+            #expect(request.method == .put)
+            #expect(request.path == "/items/1")
+        }
+
+        @Test
+        func deleteFactory() {
+            let request = Request.delete("/items/1")
+
+            #expect(request.method == .delete)
+            #expect(request.path == "/items/1")
+        }
+
+        @Test
+        func patchFactory() {
+            let request = Request.patch("/items/1")
+
+            #expect(request.method == .patch)
+            #expect(request.path == "/items/1")
+        }
+
+        @Test
+        func factoryDefaultsAreEmpty() {
+            let request = Request.get("/users")
+
+            #expect(request.headers.isEmpty)
+            #expect(request.query.isEmpty)
+            #expect(request.body == nil)
+        }
+    }
+
+    @Suite("Memberwise Init")
+    struct MemberwiseInit {
+        @Test
+        func fullInit() {
+            let body = Data("{}".utf8)
+            let request = Request(
+                method: .post,
+                path: "/items",
+                headers: [.contentType: "application/json"],
+                query: [URLQueryItem(name: "v", value: "2")],
+                body: body,
+                metadata: RequestMetadata()
+            )
+
+            #expect(request.method == .post)
+            #expect(request.path == "/items")
+            #expect(request.headers[.contentType] == "application/json")
+            #expect(request.query.count == 1)
+            #expect(request.body == body)
+        }
+
+        @Test
+        func defaultsAfterPath() {
+            let request = Request(method: .get, path: "/users")
+
+            #expect(request.headers.isEmpty)
+            #expect(request.query.isEmpty)
+            #expect(request.body == nil)
+        }
+    }
+
     @Suite("Acceptance")
     struct Acceptance {
         @Test
