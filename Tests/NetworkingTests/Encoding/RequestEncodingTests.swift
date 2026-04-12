@@ -76,14 +76,11 @@ struct RequestEncodingTests {
 
         @Test func customEncodingUsesClosureAndContentType() throws {
             let customType = ContentType(rawValue: "application/msgpack")
-            var closureCalled = false
             let encoding = RequestEncoding(contentType: customType) { _ in
-                closureCalled = true
-                return Data([0x01, 0x02])
+                Data([0x01, 0x02])
             }
 
             let data = try encoding.encode(Greeting(message: "hi"))
-            #expect(closureCalled)
             #expect(data == Data([0x01, 0x02]))
             #expect(encoding.contentType == customType)
         }
