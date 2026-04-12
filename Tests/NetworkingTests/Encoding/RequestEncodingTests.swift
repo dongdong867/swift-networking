@@ -41,6 +41,50 @@ struct RequestEncodingTests {
         }
     }
 
+    @Suite("JSON Factory")
+    struct JSONFactory {
+        @Test func defaultEncodesValidJSON() throws {
+            let encoding = RequestEncoding.json
+            let data = try encoding.encode(Greeting(message: "hello"))
+            let decoded = try JSONDecoder().decode(Greeting.self, from: data)
+            #expect(decoded.message == "hello")
+        }
+
+        @Test func defaultContentTypeIsApplicationJSON() {
+            #expect(RequestEncoding.json.contentType == .applicationJSON)
+        }
+
+        @Test func customEncoderIsUsed() throws {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .sortedKeys
+            let encoding = RequestEncoding.json(encoder)
+
+            let data = try encoding.encode(Greeting(message: "hi"))
+            let json = String(data: data, encoding: .utf8)!
+            #expect(json == "{\"message\":\"hi\"}")
+        }
+
+        @Test func customEncoderContentTypeIsApplicationJSON() {
+            let encoding = RequestEncoding.json(JSONEncoder())
+            #expect(encoding.contentType == .applicationJSON)
+        }
+
+        @Test func configureClosureIsApplied() throws {
+            let encoding = RequestEncoding.json { encoder in
+                encoder.dateEncodingStrategy = .iso8601
+            }
+
+            let data = try encoding.encode(Dated(date: Date(timeIntervalSince1970: 0)))
+            let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+            #expect(json["date"] as? String == "1970-01-01T00:00:00Z")
+        }
+
+        @Test func configureClosureContentTypeIsApplicationJSON() {
+            let encoding = RequestEncoding.json { _ in }
+            #expect(encoding.contentType == .applicationJSON)
+        }
+    }
+
     @Suite("Acceptance")
     struct Acceptance {
         @Test func jsonEncodesValueToData() throws {
