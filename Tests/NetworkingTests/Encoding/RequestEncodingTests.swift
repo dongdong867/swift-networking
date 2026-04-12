@@ -4,6 +4,43 @@ import Testing
 
 @Suite("RequestEncoding")
 struct RequestEncodingTests {
+    @Suite("Encode")
+    struct Encode {
+        @Test func delegatesToClosure() throws {
+            let encoding = RequestEncoding(contentType: .text) { _ in
+                Data("custom".utf8)
+            }
+            let data = try encoding.encode(Greeting(message: "hi"))
+            #expect(data == Data("custom".utf8))
+        }
+
+        @Test func forwardsValueToClosure() throws {
+            let encoding = RequestEncoding(contentType: .text) { value in
+                try JSONEncoder().encode(value)
+            }
+            let data = try encoding.encode(Greeting(message: "forwarded"))
+            let decoded = try JSONDecoder().decode(Greeting.self, from: data)
+            #expect(decoded.message == "forwarded")
+        }
+
+        @Test func propagatesClosureError() {
+            let encoding = RequestEncoding(contentType: .text) { _ in
+                throw TestError()
+            }
+            #expect(throws: TestError.self) {
+                try encoding.encode(Greeting(message: "hi"))
+            }
+        }
+    }
+
+    @Suite("Content Type")
+    struct ContentTypeProperty {
+        @Test func returnsConfiguredContentType() {
+            let encoding = RequestEncoding(contentType: .octetStream) { _ in Data() }
+            #expect(encoding.contentType == .octetStream)
+        }
+    }
+
     @Suite("Acceptance")
     struct Acceptance {
         @Test func jsonEncodesValueToData() throws {
@@ -54,6 +91,8 @@ struct RequestEncodingTests {
 }
 
 // MARK: - Test Helpers
+
+private struct TestError: Error {}
 
 private struct Greeting: Codable, Equatable {
     let message: String
