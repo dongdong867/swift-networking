@@ -14,3 +14,21 @@ public struct RequestEncoding: Sendable {
         try _encode(value)
     }
 }
+
+// MARK: - JSON
+
+extension RequestEncoding {
+    public static let json = Self.json(JSONEncoder())
+
+    public static func json(_ encoder: JSONEncoder) -> Self {
+        Self(contentType: .applicationJSON) { value in
+            try encoder.encode(value)
+        }
+    }
+
+    public static func json(configure: (JSONEncoder) -> Void) -> Self {
+        let encoder = JSONEncoder()
+        configure(encoder)
+        return .json(encoder)
+    }
+}
